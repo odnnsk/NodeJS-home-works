@@ -93,13 +93,28 @@ const copyFile = (filePath, done) => {
 	}
 };
 
-walker(paths.entry, copyFile, err => {
-	if (err) {
-		return process.exit(500);
-	}
+// walker(paths.entry, copyFile, err => {
+// 	if (err) {
+// 		return process.exit(500);
+// 	}
+//
+// 	console.log('Done!');
+// });
 
+
+walker(paths.entry, copyFile).then(() => {
 	console.log('Done!');
+}).catch(err => {
+	console.log(err);
 });
+
+
+
+
+
+// yourFunction(from, to, true).then(function(){
+// 	console.log(‘Success’);
+// })
 
 process.on('exit', code => {
 	switch (code) {
