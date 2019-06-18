@@ -30,24 +30,42 @@ const consoleOutput = () => {
 			date;
 
 		if(timer) {
-			clearTimeout(timer);
+			clearInterval(timer);
 			console.log('Refresh timer');
 		}
 
-		timer = setTimeout(function tick() {
+		timer = setInterval(() => {
 			date = new Date();
-
 			console.log(date);
 
 			time = time - options.timeout;
 
-			if(time >= 0){
-				timer = setTimeout(tick, options.timeout);
-			}else{
+			if(time < 0){
+				clearInterval(timer);
 				timer = null;
 				resolve(date);
 			}
 		}, options.timeout);
+
+		// if(timer) {
+		// 	clearTimeout(timer);
+		// 	console.log('Refresh timer');
+		// }
+
+		// timer = setTimeout(function tick() {
+		// 	date = new Date();
+		//
+		// 	console.log(date);
+		//
+		// 	time = time - options.timeout;
+		//
+		// 	if(time >= 0){
+		// 		timer = setTimeout(tick, options.timeout);
+		// 	}else{
+		// 		timer = null;
+		// 		resolve(date);
+		// 	}
+		// }, options.timeout);
 	});
 };
 
