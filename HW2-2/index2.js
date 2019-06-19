@@ -113,25 +113,20 @@ const copyFile = filePath => {
 
 
 const walk = function (dir, callbackOnFile) {
-
 	return new Promise(function(resolve, reject) {
-
-
 		readdir(dir).then(list => {
 			let i = 0;
 
 			const next = function (err) {
-				// if (err) return done(err)
-
 				let filePath = list[i++]
 
-				if (!filePath) return
+				if (!filePath) return resolve();
 
 				filePath = path.join(dir, filePath)
 
 				fs.stat(filePath, (_, stat) => {
 					if (stat && stat.isDirectory()) {
-						walk(filePath, callbackOnFile);
+						walk(filePath, callbackOnFile).then(next());
 					} else {
 						callbackOnFile(filePath).then(next())
 					}
@@ -139,12 +134,10 @@ const walk = function (dir, callbackOnFile) {
 			}
 
 			next()
-		}).catch(err => {
-			reject(err);
-		});
-
-	});
+		})
+	})
 };
+
 
 
 walk(paths.entry, copyFile).then(() => {
