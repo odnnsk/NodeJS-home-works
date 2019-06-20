@@ -1,43 +1,45 @@
 const fs = require('fs');
 const path = require('path');
-// const util = require('util');
-// const readFile = util.promisify(fs.readFile);
-// const writeFile = util.promisify(fs.writeFile);
+const util = require('util');
+const readdir = util.promisify(fs.readdir);
+const fsStat = util.promisify(fs.stat);
 
-const walk = function (dir, callbackOnFile, done) {
-
-	// return new Promise((resolve, reject) => {
-
-		fs.readdir(dir, (err, list) => {
-			if (err) return done(err)
+const walk = function (dir, callbackOnFile, callbackOnFolder) {
+	return new Promise(function(resolve, reject) {
+		readdir(dir).then(list => {
 			let i = 0;
 
-			const next = function (err) {
-				if (err) return done(err)
+			const next = () => {
+				let filePath = list[i++];
 
-				let filePath = list[i++]
+				if (!filePath){
+					if(callbackOnFolder){
+						return callbackOnFolder(dir).then(resolve).catch(err => { reject(err) });
+					}else{
+						return resolve();
+					}
 
-				if (!filePath) return done(null)
+					// console.log(dir);
+					// return resolve();
+				}
 
-				filePath = path.join(dir, filePath)
+				filePath = path.join(dir, filePath);
 
-				fs.stat(filePath, (_, stat) => {
+				fsStat(filePath).then((stat) => {
 					if (stat && stat.isDirectory()) {
-						walk(filePath, callbackOnFile, next);
+						walk(filePath, callbackOnFile, callbackOnFolder).then(next).catch(err => { reject(err) });
 					} else {
-						callbackOnFile(filePath, next);
+						callbackOnFile(filePath).then(next).catch(err => { reject(err) });
 					}
 				})
-			}
+
+			};
 
 			next()
+		}).catch(err => {
+			reject(err);
 		})
+	})
+};
 
-
-	// });
-
-
-
-}
-
-module.exports = walk
+module.exports = walk;

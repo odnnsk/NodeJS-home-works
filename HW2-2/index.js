@@ -2,6 +2,11 @@ const yargs = require('yargs');
 const path = require('path');
 const fs = require('fs');
 const walker = require('./libs/walker');
+const util = require('util');
+const mkdir = util.promisify(fs.mkdir);
+const rmdir = util.promisify(fs.rmdir);
+const fsLink = util.promisify(fs.link);
+const fsUnlink = util.promisify(fs.unlink);
 
 const paths = { entry: '', output: '' };
 
@@ -27,6 +32,17 @@ paths.output = path.normalize(path.join(__dirname, argv.output));
 // console.log(argv.delete);
 
 //Create Output dir
+// const createOutputDir = () => {
+// 	return mkdir(paths.output);
+// };
+
+// createOutputDir().then(() => {
+// 	console.log('ok');
+// });
+
+
+
+//Create Output dir
 if(!fs.existsSync(paths.output)) {
 	fs.mkdirSync(paths.output, err => {
 		if(err){
@@ -36,85 +52,54 @@ if(!fs.existsSync(paths.output)) {
 	});
 }
 
-//callback
-const copyFile = (filePath, done) => {
-	try {
+
+
+const copyFile = filePath => {
+	return new Promise(function(resolve, reject) {
 		const fileExtension = path.extname(filePath),
 			fileName = path.basename(filePath, fileExtension),
 			fileNameFull = path.basename(filePath),
 			dirName = fileName[0].toUpperCase(),
 			dirPath = path.normalize(path.join(paths.output, dirName));
 
-		// console.log(path.normalize(path.join(dirPath, fileNameFull)));
-		// console.log(fileNameFull);
 
 		//Create File name dir
-		if(!fs.existsSync(dirPath)) {
+		if (!fs.existsSync(dirPath)) {
 			fs.mkdirSync(dirPath, err => {
-				if(err){
+				if (err) {
 					console.log(err.message);
 					return;
 				}
 			});
 		}
 
-		fs.linkSync(filePath, path.normalize(path.join(dirPath, fileNameFull)), err => {
-			if(err){
-				console.log(err.message);
-				return;
+		fsLink(filePath, path.normalize(path.join(dirPath, fileNameFull))).then(() => {
+			if (argv.delete) {
+				return fsUnlink(filePath).then(resolve).catch(err => {
+					reject(err)
+				})
+			} else {
+				return resolve();
 			}
-		});
+		}).catch(err => {
+			reject(err);
+		})
 
-		if(argv.delete){
-			fs.unlinkSync(filePath, err => {
-				if(err){
-					console.log(err.message);
-					return;
-				}
-			});
-
-			let dir = path.parse(filePath).dir;
-			let files = fs.readdirSync(dir);
-
-			if(!files.length){
-				fs.rmdirSync(dir, err => {
-					console.log(err.message);
-					return;
-				});
-				// console.log(dir);
-			}
-
-			// console.log(files.length);
-		}
-
-		done();
-	} catch (err) {
-		done(err);
-	}
+	})
 };
 
-// walker(paths.entry, copyFile, err => {
-// 	if (err) {
-// 		return process.exit(500);
-// 	}
-//
-// 	console.log('Done!');
-// });
+const removeDir = dir => {
+	return rmdir(dir);
+};
 
 
-walker(paths.entry, copyFile).then(() => {
-	console.log('Done!');
+walker(paths.entry, copyFile, argv.delete ? removeDir : false).then(() => {
+	console.log('done!');
 }).catch(err => {
 	console.log(err);
+	process.exit(500);
 });
 
-
-
-
-
-// yourFunction(from, to, true).then(function(){
-// 	console.log(‘Success’);
-// })
 
 process.on('exit', code => {
 	switch (code) {
@@ -125,3 +110,4 @@ process.on('exit', code => {
 		default: return null;
 	}
 });
+
