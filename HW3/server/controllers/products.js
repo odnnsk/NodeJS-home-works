@@ -35,10 +35,17 @@ exports.add = req => new Promise(async (resolve, reject) => {
 		
 		form.parse(req, (err, fields, files) => {
 			if(err) reject(err);
-			
-			if(!fields.name || !fields.price || files.photo.name === '' || !files.photo.size === 0){
+
+			if(!fields.name || !fields.price){
 				fs.unlinkSync(files.photo.path);
 				reject('All fields are required!');
+				return;
+			}
+
+			if(files.photo.name === '' || !files.photo.size === 0){
+				fs.unlinkSync(files.photo.path);
+				reject('File not saved');
+				return;
 			}
 
 			const fileName = path.join(uploadDir, files.photo.name);
