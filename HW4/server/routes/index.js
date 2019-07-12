@@ -6,6 +6,13 @@ const skillsCtrl = require('../controllers/skills.js');
 const authCtrl = require('../controllers/auth.js');
 const mailCtrl = require('../controllers/mail.js');
 
+const isAuth = (ctx, next) => {
+	if(!ctx.session.isAuth) {
+		ctx.redirect('/login');
+		return;
+	}
+	return next();
+};
 
 router.get('/', async (ctx, next) => {
 	try{
@@ -53,8 +60,7 @@ router.get('/login', async (ctx, next) => {
 
 router.post('/login', async (ctx, next) => {
 	try{
-		await authCtrl.auth(ctx.request.body);
-		ctx.session.isAuth = true;
+		await authCtrl.auth(ctx, next);
 
 		ctx.redirect('/admin');
 	}
@@ -65,13 +71,8 @@ router.post('/login', async (ctx, next) => {
 	}
 });
 
-router.get('/admin', async (ctx, next) => {
+router.get('/admin', isAuth, async (ctx, next) => {
 	try{
-		if(!ctx.session.isAuth) {
-			ctx.redirect('/login');
-			return;
-		}
-
 		const msgfile = ctx.flash && ctx.flash.get() ? ctx.flash.get().msgfile : null;
 		const msgskill = ctx.flash && ctx.flash.get() ? ctx.flash.get().msgskill : null;
 
@@ -84,7 +85,7 @@ router.get('/admin', async (ctx, next) => {
 	}
 });
 
-router.post('/admin/upload', async (ctx, next) => {
+router.post('/admin/upload', isAuth, async (ctx, next) => {
 	try{
 		await productsCtrl.add({...ctx.request.files, ...ctx.request.body});
 		ctx.flash.set({msgfile: 'Картинка успешно загружена!'});
@@ -97,7 +98,7 @@ router.post('/admin/upload', async (ctx, next) => {
 	}
 });
 
-router.post('/admin/skills', async (ctx, next) => {
+router.post('/admin/skills', isAuth, async (ctx, next) => {
 	try{
 		// await skillsCtrl.add({...ctx.request.body});
 		await skillsCtrl.add(ctx.request.body);

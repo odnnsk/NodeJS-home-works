@@ -1,7 +1,14 @@
 const Koa = require('koa');
 const app = new Koa();
-
 const Pug = require('koa-pug');
+const static = require('koa-static');
+const session = require('koa-session');
+const flash = require('koa-flash-simple');
+const koaBody = require('koa-body');
+const router = require('./routes');
+
+
+//View
 const pug = new Pug({
 	viewPath: './views/pages',
 	basedir: './views',
@@ -10,10 +17,10 @@ const pug = new Pug({
 	app: app
 });
 
-const static = require('koa-static');
+//Static
 app.use(static('./public'));
 
-const session = require('koa-session');
+//Session
 app.use(session({
 	key: 'koa:sess',
 	maxAge: 10 * 60 * 1000,
@@ -24,10 +31,10 @@ app.use(session({
 	renew: false
 }, app));
 
-const flash = require('koa-flash-simple');
+//Flash message
 app.use(flash());
 
-const koaBody = require('koa-body');
+//Koa body
 app.use(koaBody({
 	formidable: {
 		uploadDir: './public/assets/img/products/'
@@ -35,11 +42,12 @@ app.use(koaBody({
 	multipart: true
 }));
 
-const router = require('./routes');
+//Routes
 app.use(router.routes());
 app.use(router.allowedMethods());
 
 
+//Error handler
 app.on('error', (ctx) => {
 	console.error(`${ctx.status} ${ctx.message}`);
 	/* centralized error handling:
