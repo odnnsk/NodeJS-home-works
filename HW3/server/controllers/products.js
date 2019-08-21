@@ -35,6 +35,10 @@ exports.add = req => new Promise(async (resolve, reject) => {
 		
 		form.parse(req, (err, fields, files) => {
 			if(err) reject(err);
+			
+			console.log(typeof files);
+			console.log(files);
+
 
 			if(!fields.name || !fields.price){
 				fs.unlinkSync(files.photo.path);
